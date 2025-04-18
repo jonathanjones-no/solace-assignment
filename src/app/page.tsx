@@ -1,43 +1,43 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import _, {debounce} from 'lodash';
+import { Advocate } from "./interface/advocate";
 
 export default function Home() {
   const [advocates, setAdvocates] = useState([]);
   const [filteredAdvocates, setFilteredAdvocates] = useState([]);
 
   useEffect(() => {
-    console.log("fetching advocates...");
     fetch("/api/advocates").then((response) => {
       response.json().then((jsonResponse) => {
         setAdvocates(jsonResponse.data);
         setFilteredAdvocates(jsonResponse.data);
       });
+    })
+    .catch((error) => {
+      console.error("Error fetching advocates:", error);
     });
   }, []);
 
-  const onChange = (e) => {
+  const onChange = debounce((e) => {
     const searchTerm = e.target.value;
-
-    document.getElementById("search-term").innerHTML = searchTerm;
-
-    console.log("filtering advocates...");
-    const filteredAdvocates = advocates.filter((advocate) => {
+    const filteredAdvocates = advocates.filter((advocate: Advocate) => {
       return (
-        advocate.firstName.includes(searchTerm) ||
-        advocate.lastName.includes(searchTerm) ||
-        advocate.city.includes(searchTerm) ||
-        advocate.degree.includes(searchTerm) ||
-        advocate.specialties.includes(searchTerm) ||
-        advocate.yearsOfExperience.includes(searchTerm)
+        advocate.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        advocate.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        advocate.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        advocate.degree.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        advocate.specialties.some(v => v.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        String(advocate.yearsOfExperience).toLowerCase().includes(searchTerm.toLowerCase())
       );
     });
 
     setFilteredAdvocates(filteredAdvocates);
-  };
+  }, 300);
 
   const onClick = () => {
-    console.log(advocates);
+    (document.getElementById("search-term") as HTMLInputElement)!.value = '';
     setFilteredAdvocates(advocates);
   };
 
@@ -77,16 +77,16 @@ export default function Home() {
              </tr>
             </thead>
             <tbody>
-              {filteredAdvocates.map((advocate, index) => {
+              {filteredAdvocates.map((advocate: Advocate) => {
                 return (
-                  <tr key={index}>
+                  <tr key={advocate.id}>
                     <td>{advocate.firstName}</td>
                     <td>{advocate.lastName}</td>
                     <td>{advocate.city}</td>
                     <td>{advocate.degree}</td>
                     <td>
-                      {advocate.specialties.map((s) => (
-                        <div key={s}>{s}</div>
+                      {advocate.specialties.map((s: string, index) => (
+                        <div key={index}>{s}</div>
                       ))}
                     </td>
                     <td>{advocate.yearsOfExperience}</td>
